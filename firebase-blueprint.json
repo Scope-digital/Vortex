@@ -1,0 +1,64 @@
+{
+  "entities": {
+    "site_content": {
+      "title": "Site Content & Customizations",
+      "description": "Stores editable visual content, images, company info, and section copy for the website",
+      "fields": {
+        "key": {
+          "type": "string",
+          "description": "Identifier of the site content section (e.g. global, home_hero, services)"
+        },
+        "data": {
+          "type": "string",
+          "description": "JSON string or nested map of customized content"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last update"
+        },
+        "updatedBy": {
+          "type": "string",
+          "description": "User identifier who performed the update"
+        }
+      }
+    },
+    "quote_requests": {
+      "title": "Quote Requests & Leads",
+      "description": "Stores inbound quote submissions and contact enquiries from prospective customers",
+      "fields": {
+        "customerName": {
+          "type": "string",
+          "description": "Customer full name"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Customer phone number"
+        },
+        "email": {
+          "type": "string",
+          "description": "Customer email"
+        },
+        "postcode": {
+          "type": "string",
+          "description": "Customer UK postcode"
+        },
+        "service": {
+          "type": "string",
+          "description": "Glazing or roofline service requested"
+        },
+        "details": {
+          "type": "string",
+          "description": "Additional requirements or specifications"
+        },
+        "status": {
+          "type": "string",
+          "description": "Lead status: new, contacted, quoted, completed"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp of submission"
+        }
+      }
+    }
+  }
+}

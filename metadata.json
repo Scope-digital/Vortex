@@ -1,0 +1,6 @@
+{
+  "name": "Vortex Windows and Doors",
+  "description": "Premium UPVC windows, composite doors, fascias, soffits, and guttering specialists proudly serving Dewsbury and West Yorkshire.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

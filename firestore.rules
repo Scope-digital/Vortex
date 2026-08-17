@@ -1,0 +1,17 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Site content: Public can read, anyone with access or admin can write
+    match /site_content/{document=**} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Inbound quote requests & contact messages
+    match /quote_requests/{document=**} {
+      allow create: if true;
+      allow read, update, delete: if true;
+    }
+  }
+}

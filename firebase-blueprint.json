@@ -59,6 +59,52 @@
           "description": "ISO timestamp of submission"
         }
       }
+    },
+    "gallery_projects": {
+      "title": "Gallery Projects & Transformations",
+      "description": "Stores before and after photos, product specs, locations, and descriptions for project transformations",
+      "fields": {
+        "title": {
+          "type": "string",
+          "description": "Project title headline"
+        },
+        "category": {
+          "type": "string",
+          "description": "Category: windows, doors, bifolds, fascia-soffit"
+        },
+        "location": {
+          "type": "string",
+          "description": "Project town/city (e.g. Dewsbury, West Yorkshire)"
+        },
+        "completionDate": {
+          "type": "string",
+          "description": "Completion month and year"
+        },
+        "beforeImage": {
+          "type": "string",
+          "description": "URL or base64 data for before photo"
+        },
+        "afterImage": {
+          "type": "string",
+          "description": "URL or base64 data for after photo"
+        },
+        "description": {
+          "type": "string",
+          "description": "Workmanship story and scope"
+        },
+        "productInstalled": {
+          "type": "string",
+          "description": "Product specification"
+        },
+        "color": {
+          "type": "string",
+          "description": "Colour finish or RAL"
+        },
+        "energyRating": {
+          "type": "string",
+          "description": "Energy rating badge"
+        }
+      }
     }
   }
 }

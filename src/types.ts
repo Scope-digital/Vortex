@@ -22,6 +22,7 @@ export type PageRoute =
   | 'about'
   | 'contact'
   | 'quote-builder'
+  | 'admin'
   | 'admin-leads';
 
 export interface ServiceDetail {

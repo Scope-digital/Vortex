@@ -12,6 +12,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { PageRoute } from '../types';
+import { VortexLogo } from './VortexLogo';
 
 interface NavbarProps {
   currentRoute: PageRoute;
@@ -90,40 +91,9 @@ export const Navbar: React.FC<NavbarProps> = ({
           <button 
             id="brand-logo-btn"
             onClick={() => handleNavClick('home')}
-            className="flex items-center gap-3 text-left group cursor-pointer focus:outline-none"
+            className="flex items-center gap-3 text-left group cursor-pointer focus:outline-none py-1"
           >
-            {/* 3D Wireframe / Isometric Window Logo */}
-            <div className="relative w-10 h-10 flex-shrink-0">
-              <svg 
-                viewBox="0 0 100 100" 
-                className="w-full h-full text-blue-700 drop-shadow-sm group-hover:scale-105 transition-transform"
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="4" 
-                strokeLinecap="round" 
-                strokeLinejoin="round"
-              >
-                {/* 3D Cube / Isometric Window Frame */}
-                <path d="M50 12 L85 30 L85 70 L50 88 L15 70 L15 30 Z" className="stroke-slate-900 fill-slate-900/5" strokeWidth="5" />
-                <path d="M50 12 L50 88" className="stroke-blue-700" strokeWidth="4" />
-                <path d="M15 30 L50 48 L85 30" className="stroke-slate-900" strokeWidth="4" />
-                {/* Left Panes */}
-                <line x1="32" y1="21" x2="32" y2="78" className="stroke-blue-600" strokeWidth="3" />
-                <line x1="15" y1="50" x2="50" y2="68" className="stroke-blue-600" strokeWidth="3" />
-                {/* Right Panes */}
-                <line x1="68" y1="21" x2="68" y2="78" className="stroke-blue-600" strokeWidth="3" />
-                <line x1="50" y1="68" x2="85" y2="50" className="stroke-blue-600" strokeWidth="3" />
-              </svg>
-            </div>
-
-            <div className="flex flex-col">
-              <span className="text-2xl sm:text-[26px] font-extrabold tracking-tight text-slate-900 leading-none">
-                Vortex
-              </span>
-              <span className="text-xs sm:text-[13px] font-medium text-blue-700 tracking-normal leading-tight mt-0.5">
-                windows and doors
-              </span>
-            </div>
+            <VortexLogo variant="light" size="md" className="group-hover:scale-102 transition-transform" />
           </button>
 
           {/* Desktop Navigation Links */}

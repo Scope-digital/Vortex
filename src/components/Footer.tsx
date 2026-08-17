@@ -13,6 +13,7 @@ import {
 import { PageRoute } from '../types';
 import { useContent } from '../context/ContentContext';
 import { EditableText } from './admin/EditableText';
+import { VortexLogo } from './VortexLogo';
 
 interface FooterProps {
   onNavigate: (route: PageRoute) => void;
@@ -59,20 +60,8 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenQuoteModal }) 
           
           {/* Brand Info */}
           <div className="lg:col-span-2 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 flex-shrink-0">
-                <svg viewBox="0 0 100 100" className="w-full h-full text-blue-500" fill="none" stroke="currentColor" strokeWidth="4">
-                  <path d="M50 12 L85 30 L85 70 L50 88 L15 70 L15 30 Z" className="stroke-white fill-white/10" strokeWidth="5" />
-                  <path d="M50 12 L50 88" className="stroke-blue-500" strokeWidth="4" />
-                  <path d="M15 30 L50 48 L85 30" className="stroke-white" strokeWidth="4" />
-                  <line x1="32" y1="21" x2="32" y2="78" className="stroke-blue-400" strokeWidth="3" />
-                  <line x1="68" y1="21" x2="68" y2="78" className="stroke-blue-400" strokeWidth="3" />
-                </svg>
-              </div>
-              <div>
-                <span className="text-2xl font-extrabold text-white tracking-tight">Vortex</span>
-                <span className="block text-xs font-semibold text-blue-400">windows and doors</span>
-              </div>
+            <div className="flex items-center">
+              <VortexLogo variant="dark" size="md" />
             </div>
 
             <p className="text-sm text-slate-400 leading-relaxed pr-4">
@@ -208,9 +197,15 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenQuoteModal }) 
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <p>© {new Date().getFullYear()} Vortex Windows and Doors Ltd. All rights reserved.</p>
           <div className="flex items-center gap-6">
-            <button onClick={() => onNavigate('about')} className="hover:text-slate-300">About Vortex</button>
-            <button onClick={() => onNavigate('gallery')} className="hover:text-slate-300">Project Gallery</button>
-            <button onClick={() => onNavigate('contact')} className="hover:text-slate-300">Contact & Showroom</button>
+            <button onClick={() => onNavigate('about')} className="hover:text-slate-300 cursor-pointer">About Vortex</button>
+            <button onClick={() => onNavigate('gallery')} className="hover:text-slate-300 cursor-pointer">Project Gallery</button>
+            <button onClick={() => onNavigate('contact')} className="hover:text-slate-300 cursor-pointer">Contact & Showroom</button>
+            <button 
+              onClick={() => onNavigate('admin')} 
+              className="text-slate-600 hover:text-slate-400 text-[11px] cursor-pointer transition-colors"
+            >
+              Staff Portal
+            </button>
           </div>
         </div>
 

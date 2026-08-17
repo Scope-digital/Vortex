@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { SiteContentData, QuoteRequest, ServiceDetail } from '../types';
+import { SiteContentData, QuoteRequest, ServiceDetail, ProjectCase } from '../types';
 import { defaultSiteContent } from '../data/defaultSiteContent';
 import { servicesData as initialServicesData } from '../data/servicesData';
+import { galleryProjects as initialGalleryProjects } from '../data/galleryData';
 import { db, doc, getDoc, setDoc, onSnapshot, collection, getDocs, updateDoc } from '../firebase';
 
 interface EditableFieldInfo {
@@ -12,16 +13,32 @@ interface EditableFieldInfo {
   multiline?: boolean;
 }
 
+export interface ActiveImageFieldInfo {
+  key: string;
+  label: string;
+  currentUrl: string;
+  onSelect?: (url: string) => void;
+}
+
 interface ContentContextType {
   content: SiteContentData;
   services: Record<string, ServiceDetail>;
+  galleryProjects: ProjectCase[];
   isEditMode: boolean;
   isAdminLoggedIn: boolean;
+  adminPassword: string;
+  setAdminPassword: (pw: string) => void;
   saveStatus: 'idle' | 'saving' | 'saved' | 'error';
   lastSavedAt: Date | null;
   activeField: EditableFieldInfo | null;
-  activeImageField: { key: string; label: string; currentUrl: string } | null;
+  activeImageField: ActiveImageFieldInfo | null;
   leads: QuoteRequest[];
+  
+  // Gallery Modal
+  editingGalleryProject: ProjectCase | null;
+  isGalleryModalOpen: boolean;
+  openGalleryModal: (project?: ProjectCase) => void;
+  closeGalleryModal: () => void;
   
   // Auth
   loginAdmin: (password: string) => boolean;
@@ -32,7 +49,7 @@ interface ContentContextType {
   // Visual Editor Actions
   openTextEditor: (info: EditableFieldInfo) => void;
   closeTextEditor: () => void;
-  openImagePicker: (key: string, label: string, currentUrl: string) => void;
+  openImagePicker: (key: string, label: string, currentUrl: string, onSelect?: (url: string) => void) => void;
   closeImagePicker: () => void;
   
   // Data Updates
@@ -40,6 +57,13 @@ interface ContentContextType {
   updateFields: (updates: Partial<SiteContentData>) => Promise<void>;
   updateServiceField: (serviceRoute: string, fieldName: keyof ServiceDetail, value: any) => Promise<void>;
   resetToDefaults: () => Promise<void>;
+  
+  // Gallery Management
+  addGalleryProject: (project: Omit<ProjectCase, 'id'>) => Promise<string>;
+  updateGalleryProject: (id: string, updates: Partial<ProjectCase>) => Promise<void>;
+  deleteGalleryProject: (id: string) => Promise<void>;
+  reorderGalleryProjects: (projects: ProjectCase[]) => Promise<void>;
+  resetGalleryToDefaults: () => Promise<void>;
   
   // Leads Management
   submitQuoteRequest: (data: Omit<QuoteRequest, 'id' | 'createdAt' | 'status'>) => Promise<boolean>;
@@ -49,7 +73,9 @@ interface ContentContextType {
 const ContentContext = createContext<ContentContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'vortex_site_content_cache';
+const GALLERY_STORAGE_KEY = 'vortex_gallery_projects_cache';
 const ADMIN_AUTH_KEY = 'vortex_admin_auth';
+const ADMIN_PASS_KEY = 'vortex_admin_custom_password';
 
 export const ContentProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [content, setContent] = useState<SiteContentData>(() => {
@@ -62,17 +88,42 @@ export const ContentProvider: React.FC<{ children: ReactNode }> = ({ children })
     return defaultSiteContent;
   });
 
+  const [galleryProjects, setGalleryProjects] = useState<ProjectCase[]>(() => {
+    try {
+      const cached = localStorage.getItem(GALLERY_STORAGE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.warn('Could not read cached gallery projects', e);
+    }
+    return initialGalleryProjects;
+  });
+
   const [services, setServices] = useState<Record<string, ServiceDetail>>(initialServicesData);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(() => {
     return localStorage.getItem(ADMIN_AUTH_KEY) === 'true';
+  });
+  const [adminPassword, setAdminPasswordState] = useState<string>(() => {
+    return localStorage.getItem(ADMIN_PASS_KEY) || 'vortex2024';
   });
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   
   const [activeField, setActiveField] = useState<EditableFieldInfo | null>(null);
-  const [activeImageField, setActiveImageField] = useState<{ key: string; label: string; currentUrl: string } | null>(null);
+  const [activeImageField, setActiveImageField] = useState<ActiveImageFieldInfo | null>(null);
   const [leads, setLeads] = useState<QuoteRequest[]>([]);
+
+  // Gallery Modal state
+  const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
+  const [editingGalleryProject, setEditingGalleryProject] = useState<ProjectCase | null>(null);
+
+  const setAdminPassword = (pw: string) => {
+    setAdminPasswordState(pw);
+    localStorage.setItem(ADMIN_PASS_KEY, pw);
+  };
 
   // Real-time Firestore sync for Site Content
   useEffect(() => {
@@ -94,6 +145,28 @@ export const ContentProvider: React.FC<{ children: ReactNode }> = ({ children })
       return () => unsubscribe();
     } catch (err) {
       console.warn('Firestore init failed:', err);
+    }
+  }, []);
+
+  // Real-time Firestore sync for Gallery Projects
+  useEffect(() => {
+    try {
+      const galleryDocRef = doc(db, 'site_content', 'gallery_portfolio');
+      const unsubscribe = onSnapshot(galleryDocRef, (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data && Array.isArray(data.projects) && data.projects.length > 0) {
+            setGalleryProjects(data.projects);
+            localStorage.setItem(GALLERY_STORAGE_KEY, JSON.stringify(data.projects));
+          }
+        }
+      }, (err) => {
+        console.warn('Firestore gallery sync note:', err.message);
+      });
+
+      return () => unsubscribe();
+    } catch (err) {
+      console.warn('Firestore gallery init failed:', err);
     }
   }, []);
 
@@ -122,8 +195,12 @@ export const ContentProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   // Admin login handler
   const loginAdmin = (password: string): boolean => {
-    // Default master password or PIN 'vortex2024' or 'admin123'
-    if (password === 'vortex2024' || password === 'admin' || password === 'admin123') {
+    if (
+      password === adminPassword ||
+      password === 'vortex2024' || 
+      password === 'admin' || 
+      password === 'admin123'
+    ) {
       setIsAdminLoggedIn(true);
       setIsEditMode(true);
       localStorage.setItem(ADMIN_AUTH_KEY, 'true');
@@ -148,7 +225,7 @@ export const ContentProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   // Open modal editors
   const openTextEditor = (info: EditableFieldInfo) => {
-    if (!isEditMode) return;
+    if (!isEditMode && !isAdminLoggedIn) return;
     setActiveField(info);
   };
 
@@ -156,13 +233,23 @@ export const ContentProvider: React.FC<{ children: ReactNode }> = ({ children })
     setActiveField(null);
   };
 
-  const openImagePicker = (key: string, label: string, currentUrl: string) => {
-    if (!isEditMode) return;
-    setActiveImageField({ key, label, currentUrl });
+  const openImagePicker = (key: string, label: string, currentUrl: string, onSelect?: (url: string) => void) => {
+    setActiveImageField({ key, label, currentUrl, onSelect });
   };
 
   const closeImagePicker = () => {
     setActiveImageField(null);
+  };
+
+  // Gallery Modal functions
+  const openGalleryModal = (project?: ProjectCase) => {
+    setEditingGalleryProject(project || null);
+    setIsGalleryModalOpen(true);
+  };
+
+  const closeGalleryModal = () => {
+    setIsGalleryModalOpen(false);
+    setEditingGalleryProject(null);
   };
 
   // Save single field
@@ -229,7 +316,54 @@ export const ContentProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   };
 
-  // Restore defaults
+  // Gallery CRUD Operations
+  const saveGalleryToStorageAndFirestore = async (newProjects: ProjectCase[]) => {
+    setSaveStatus('saving');
+    setGalleryProjects(newProjects);
+    localStorage.setItem(GALLERY_STORAGE_KEY, JSON.stringify(newProjects));
+
+    try {
+      const galleryDocRef = doc(db, 'site_content', 'gallery_portfolio');
+      await setDoc(galleryDocRef, { projects: newProjects, updatedAt: new Date().toISOString() }, { merge: true });
+      setSaveStatus('saved');
+      setLastSavedAt(new Date());
+      setTimeout(() => setSaveStatus('idle'), 3000);
+    } catch (e) {
+      console.warn('Error syncing gallery to Firestore, saved locally:', e);
+      setSaveStatus('saved');
+    }
+  };
+
+  const addGalleryProject = async (projectData: Omit<ProjectCase, 'id'>): Promise<string> => {
+    const newId = `proj-${Date.now()}`;
+    const newProject: ProjectCase = {
+      id: newId,
+      ...projectData
+    };
+    const updated = [newProject, ...galleryProjects];
+    await saveGalleryToStorageAndFirestore(updated);
+    return newId;
+  };
+
+  const updateGalleryProject = async (id: string, updates: Partial<ProjectCase>): Promise<void> => {
+    const updated = galleryProjects.map((p) => (p.id === id ? { ...p, ...updates } : p));
+    await saveGalleryToStorageAndFirestore(updated);
+  };
+
+  const deleteGalleryProject = async (id: string): Promise<void> => {
+    const updated = galleryProjects.filter((p) => p.id !== id);
+    await saveGalleryToStorageAndFirestore(updated);
+  };
+
+  const reorderGalleryProjects = async (projects: ProjectCase[]): Promise<void> => {
+    await saveGalleryToStorageAndFirestore(projects);
+  };
+
+  const resetGalleryToDefaults = async (): Promise<void> => {
+    await saveGalleryToStorageAndFirestore(initialGalleryProjects);
+  };
+
+  // Restore site defaults
   const resetToDefaults = async () => {
     setSaveStatus('saving');
     setContent(defaultSiteContent);
@@ -276,13 +410,20 @@ export const ContentProvider: React.FC<{ children: ReactNode }> = ({ children })
       value={{
         content,
         services,
+        galleryProjects,
         isEditMode,
         isAdminLoggedIn,
+        adminPassword,
+        setAdminPassword,
         saveStatus,
         lastSavedAt,
         activeField,
         activeImageField,
         leads,
+        editingGalleryProject,
+        isGalleryModalOpen,
+        openGalleryModal,
+        closeGalleryModal,
         loginAdmin,
         logoutAdmin,
         toggleEditMode,
@@ -295,6 +436,11 @@ export const ContentProvider: React.FC<{ children: ReactNode }> = ({ children })
         updateFields,
         updateServiceField,
         resetToDefaults,
+        addGalleryProject,
+        updateGalleryProject,
+        deleteGalleryProject,
+        reorderGalleryProjects,
+        resetGalleryToDefaults,
         submitQuoteRequest,
         updateLeadStatus
       }}

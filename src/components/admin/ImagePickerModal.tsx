@@ -88,7 +88,12 @@ export const ImagePickerModal: React.FC = () => {
 
   const handleApply = async () => {
     if (!imageUrl) return;
-    await updateField(activeImageField.key, imageUrl);
+    if (activeImageField.onSelect) {
+      activeImageField.onSelect(imageUrl);
+    }
+    if (activeImageField.key) {
+      await updateField(activeImageField.key, imageUrl);
+    }
     closeImagePicker();
   };
 

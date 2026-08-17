@@ -15,14 +15,20 @@ import {
   Phone, 
   Mail,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  LayoutDashboard
 } from 'lucide-react';
+import { PageRoute } from '../../types';
 import { useContent } from '../../context/ContentContext';
-import { AdminLoginModal } from './AdminLoginModal';
 import { LeadsManagerModal } from './LeadsManagerModal';
 import { CpanelExportModal } from './CpanelExportModal';
 
-export const AdminBar: React.FC = () => {
+interface AdminBarProps {
+  onNavigate?: (route: PageRoute) => void;
+  currentRoute?: PageRoute;
+}
+
+export const AdminBar: React.FC<AdminBarProps> = ({ onNavigate, currentRoute }) => {
   const { 
     isAdminLoggedIn, 
     isEditMode, 
@@ -36,36 +42,15 @@ export const AdminBar: React.FC = () => {
     content
   } = useContent();
 
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isLeadsModalOpen, setIsLeadsModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [showConfirmReset, setShowConfirmReset] = useState(false);
 
   const newLeadsCount = leads.filter(l => (l.status || 'new') === 'new').length;
 
-  if (!isAdminLoggedIn) {
-    return (
-      <>
-        {/* Floating discrete Admin Login trigger in bottom right */}
-        <div className="fixed bottom-4 right-4 z-40">
-          <button
-            onClick={() => setIsLoginModalOpen(true)}
-            title="Admin & Visual Editor Login"
-            className="bg-slate-900/90 hover:bg-slate-900 text-white p-2.5 rounded-full shadow-lg border border-slate-700 hover:border-blue-500 transition-all flex items-center gap-2 text-xs font-bold backdrop-blur-md cursor-pointer group"
-          >
-            <Lock className="w-4 h-4 text-blue-400 group-hover:rotate-12 transition-transform" />
-            <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap text-slate-200 pr-1">
-              Admin & Visual Editor
-            </span>
-          </button>
-        </div>
-
-        <AdminLoginModal
-          isOpen={isLoginModalOpen}
-          onClose={() => setIsLoginModalOpen(false)}
-        />
-      </>
-    );
+  // Don't render anything if not logged in (clean front-end!) OR if already on /admin page
+  if (!isAdminLoggedIn || currentRoute === 'admin') {
+    return null;
   }
 
   return (
@@ -76,23 +61,27 @@ export const AdminBar: React.FC = () => {
           
           {/* Left: Brand / Mode */}
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 bg-blue-600/30 text-blue-300 border border-blue-500/40 px-2.5 py-1 rounded-md font-extrabold uppercase tracking-wider text-[10px]">
-              <Sparkles className="w-3 h-3 text-amber-400" />
-              <span>Admin Active</span>
-            </div>
+            <button
+              onClick={() => onNavigate?.('admin')}
+              className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white border border-blue-400/50 px-2.5 py-1 rounded-md font-extrabold uppercase tracking-wider text-[10px] cursor-pointer transition-all"
+              title="Open Full Admin Dashboard"
+            >
+              <LayoutDashboard className="w-3.5 h-3.5" />
+              <span>Admin Portal</span>
+            </button>
 
             {/* Edit Mode Toggle Switch */}
             <button
               onClick={toggleEditMode}
               className={`flex items-center gap-2 px-3 py-1 rounded-full font-bold text-xs transition-all cursor-pointer ${
                 isEditMode
-                  ? 'bg-blue-600 text-white shadow-xs ring-2 ring-blue-400/40'
+                  ? 'bg-emerald-600 text-white shadow-xs ring-2 ring-emerald-400/40'
                   : 'bg-slate-800 text-slate-400 hover:text-white'
               }`}
             >
-              <div className={`w-2 h-2 rounded-full ${isEditMode ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
+              <div className={`w-2 h-2 rounded-full ${isEditMode ? 'bg-white animate-pulse' : 'bg-slate-500'}`} />
               <Edit3 className="w-3.5 h-3.5" />
-              <span>Visual Editor: {isEditMode ? 'ON (Click any element to edit)' : 'OFF (Previewing)'}</span>
+              <span>Visual Editor: {isEditMode ? 'ON (Click text/images to edit)' : 'OFF'}</span>
             </button>
           </div>
 
